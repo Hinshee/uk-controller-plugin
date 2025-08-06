@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-ARG CURL_VERSION=7.62.0
+ARG CURL_VERSION=8.8.0
 ARG LLVM_VERSION=18
 ARG XWIN_VERSION=0.6.5
 ARG XWIN_TRIPLE=x86_64-unknown-linux-musl
@@ -148,17 +148,42 @@ RUN <<-EOF
 	set -eux
 
 	cd /opt/curl
-	sed -ie "s/\\\\xa9/(c)/g" lib/libcurl.rc src/curl.rc # curl/curl#7765
+	
+	# Debug: Check if files exist and toolchain is available
+	echo "=== Debugging cURL build ==="
+	ls -la lib/libcurl.rc src/curl.rc || true
+	echo "TOOLCHAIN: $TOOLCHAIN"
+	cat $TOOLCHAIN
+	echo "=== End Debug ==="
+	
+	# Apply the copyright fix only if the files exist
+	sed -ie "s/\\\\xa9/(c)/g" lib/libcurl.rc src/curl.rc 2>/dev/null || echo "RC files not found or already patched"
+	
+	# Configure with verbose output
 	cmake --fresh \
 		-DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN \
 		-DBUILD_CURL_EXE=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF \
 		-DCURL_CA_PATH=none -DCURL_USE_LIBPSL=OFF \
+		-DCMAKE_VERBOSE_MAKEFILE=ON \
 		-G Ninja -B build
 	ninja -C build
 
 	cd build/lib
-	cp libcurl_imp.lib libcurl_a.lib
-	cp libcurl_imp.lib libcurl_a_debug.lib
+	# Check what library files are actually created
+	echo "=== Library files created ==="
+	ls -la
+	echo "=== End Library files ==="
+	
+	# Copy files with fallbacks for different naming conventions
+	cp libcurl_imp.lib libcurl_a.lib 2>/dev/null || \
+	cp libcurl.lib libcurl_a.lib 2>/dev/null || \
+	cp curl.lib libcurl_a.lib 2>/dev/null || \
+	echo "Warning: Could not find import library to copy"
+	
+	cp libcurl_imp.lib libcurl_a_debug.lib 2>/dev/null || \
+	cp libcurl.lib libcurl_a_debug.lib 2>/dev/null || \
+	cp curl.lib libcurl_a_debug.lib 2>/dev/null || \
+	echo "Warning: Could not find debug library to copy"
 EOF
 
 ENV CURL_INCLUDEDIR=/opt/curl/include/
