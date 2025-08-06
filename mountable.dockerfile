@@ -50,12 +50,24 @@ RUN <<-EOF
 
 	<<-EOF2 cat > cc
 		#!/bin/env bash
+		# Filter out GCC/Clang-specific warnings that clang-cl doesn't support
+		args=()
+		for arg in "\$@"; do
+			case "\$arg" in
+				-Wno-cast-function-type-mismatch)
+					# Skip this argument - not supported by clang-cl
+					;;
+				*)
+					args+=("\$arg")
+					;;
+			esac
+		done
 		LD_PRELOAD=/opt/xwin/bin/libinsensitive.so \
 			clang-cl-$LLVM_VERSION \
 				-Wno-microsoft --target=i686-pc-windows-msvc /EHa /arch:SSE \
 				/imsvc /opt/xwin/crt/include      /imsvc /opt/xwin/sdk/include/shared \
 				/imsvc /opt/xwin/sdk/include/ucrt /imsvc /opt/xwin/sdk/include/um \
-				\$@
+				"\${args[@]}"
 	EOF2
 	<<-EOF2 cat > lib
 		#!/bin/env bash
@@ -94,6 +106,12 @@ RUN <<-EOF
 		set(CMAKE_LINKER       "/opt/xwin/bin/link")
 		set(CMAKE_MT           "/opt/xwin/bin/mt")
 		set(CMAKE_RC_COMPILER  "/opt/xwin/bin/rc")
+		
+		# Force CMake to recognize this as MSVC-compatible
+		set(CMAKE_C_COMPILER_ID "MSVC")
+		set(CMAKE_CXX_COMPILER_ID "MSVC")
+		set(CMAKE_C_SIMULATE_ID "MSVC")
+		set(CMAKE_CXX_SIMULATE_ID "MSVC")
 	EOF2
 EOF
 
