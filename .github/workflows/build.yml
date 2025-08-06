@@ -3,15 +3,15 @@ name: Build
 on:
   push:
     branches:
-      - 'main'
-      - 'alpha'
-      - 'beta'
+      - "main"
+      - "alpha"
+      - "beta"
   pull_request:
 
 jobs:
   build:
     name: Build
-    runs-on: windows-2019
+    runs-on: windows-latest
     concurrency:
       group: ukcp-build-${{ github.ref }}
       cancel-in-progress: true
@@ -47,14 +47,14 @@ jobs:
           CURL_DOWNLOAD_URL: "https://github.com/curl/curl/releases/download/curl-7_76_1/curl-7.76.1.zip"
           CURL_VERSION: 7.76.1
         run: |
-            New-Item -Path "C:\\hostedtoolcache\\windows" -Name "libcurl" -ItemType "directory"
-            $WebClient = New-Object System.Net.WebClient
-            $WebClient.DownloadFile(${env:CURL_DOWNLOAD_URL}, "C:\\hostedtoolcache\\windows\\libcurl\\curl.zip")
-            Set-Location -Path "C:\\hostedtoolcache\\windows\\libcurl"
-            7z x curl.zip
-            Remove-Item curl.zip
-            Set-Location -Path "C:\\hostedtoolcache\\windows\\libcurl\\curl-${env:CURL_VERSION}\\winbuild"
-            nmake /f Makefile.vc mode=static ENABLE_SCHANNEL=yes
+          New-Item -Path "C:\\hostedtoolcache\\windows" -Name "libcurl" -ItemType "directory"
+          $WebClient = New-Object System.Net.WebClient
+          $WebClient.DownloadFile(${env:CURL_DOWNLOAD_URL}, "C:\\hostedtoolcache\\windows\\libcurl\\curl.zip")
+          Set-Location -Path "C:\\hostedtoolcache\\windows\\libcurl"
+          7z x curl.zip
+          Remove-Item curl.zip
+          Set-Location -Path "C:\\hostedtoolcache\\windows\\libcurl\\curl-${env:CURL_VERSION}\\winbuild"
+          nmake /f Makefile.vc mode=static ENABLE_SCHANNEL=yes
 
       - name: Setup cURL Environment
         env:
@@ -67,7 +67,7 @@ jobs:
       - name: Setup Yarn
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: "16"
 
       - name: Get Yarn Cache Directory
         id: yarn-cache-dir-path
@@ -85,7 +85,7 @@ jobs:
       - name: Load Cached Node Modules
         uses: actions/cache@v4
         with:
-          path: '**/node_modules'
+          path: "**/node_modules"
           key: ${{ runner.os }}-node-modules-${{ hashFiles('**/yarn.lock') }}
 
       # Install yarn things
@@ -196,7 +196,7 @@ jobs:
       - name: Setup Yarn
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: "16"
 
       - name: Get Yarn Cache Directory
         id: yarn-cache-dir-path
@@ -214,7 +214,7 @@ jobs:
       - name: Load Cached Node Modules
         uses: actions/cache@v4
         with:
-          path: '**/node_modules'
+          path: "**/node_modules"
           key: ${{ runner.os }}-node-modules-${{ hashFiles('**/yarn.lock') }}
 
       # Install yarn things
