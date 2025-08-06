@@ -99,7 +99,21 @@ RUN <<-EOF
 
 	<<-EOF2 cat > xwin.cmake
 		set(CMAKE_SYSTEM_NAME Windows)
-
+		set(CMAKE_SYSTEM_VERSION 10.0)
+		
+		# Force MSVC platform detection
+		set(CMAKE_C_COMPILER_ID "MSVC")
+		set(CMAKE_CXX_COMPILER_ID "MSVC")
+		set(CMAKE_C_SIMULATE_ID "MSVC")
+		set(CMAKE_CXX_SIMULATE_ID "MSVC")
+		set(CMAKE_C_COMPILER_FRONTEND_VARIANT "MSVC")
+		set(CMAKE_CXX_COMPILER_FRONTEND_VARIANT "MSVC")
+		
+		# Set compiler version to match MSVC 19.29 (VS 2019)
+		set(CMAKE_C_COMPILER_VERSION "19.29.30037.0")
+		set(CMAKE_CXX_COMPILER_VERSION "19.29.30037.0")
+		
+		# Set compilers and tools
 		set(CMAKE_AR           "/opt/xwin/bin/lib")
 		set(CMAKE_C_COMPILER   "/opt/xwin/bin/cc")
 		set(CMAKE_CXX_COMPILER "/opt/xwin/bin/cc")
@@ -107,11 +121,14 @@ RUN <<-EOF
 		set(CMAKE_MT           "/opt/xwin/bin/mt")
 		set(CMAKE_RC_COMPILER  "/opt/xwin/bin/rc")
 		
-		# Force CMake to recognize this as MSVC-compatible
-		set(CMAKE_C_COMPILER_ID "MSVC")
-		set(CMAKE_CXX_COMPILER_ID "MSVC")
-		set(CMAKE_C_SIMULATE_ID "MSVC")
-		set(CMAKE_CXX_SIMULATE_ID "MSVC")
+		# Disable compiler checks that might detect clang
+		set(CMAKE_C_COMPILER_ID_RUN TRUE)
+		set(CMAKE_CXX_COMPILER_ID_RUN TRUE)
+		set(CMAKE_C_COMPILER_FORCED TRUE)
+		set(CMAKE_CXX_COMPILER_FORCED TRUE)
+		
+		# Set platform to Windows-MSVC explicitly
+		set(CMAKE_GENERATOR_PLATFORM "Win32")
 	EOF2
 EOF
 
