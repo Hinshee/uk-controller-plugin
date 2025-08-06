@@ -281,9 +281,10 @@ if(MSVC)
         /std:c++latest;
         /sdl;
         /W4;
-        /WX;
         ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
-        ${DEFAULT_CXX_EXCEPTION_HANDLING}
+        ${DEFAULT_CXX_EXCEPTION_HANDLING};
+        -Wno-deprecated-literal-operator; # Fix for nlohmann/json literal operator warnings
+        /DFMT_CONSTEVAL=
     )
     target_link_options(${PROJECT_NAME} PRIVATE
         $<$<CONFIG:Debug>:

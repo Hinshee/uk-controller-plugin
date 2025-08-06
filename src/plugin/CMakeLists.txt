@@ -1138,14 +1138,15 @@ if(MSVC)
         /std:c++20;
         /sdl;
         /W4;
-        /WX;
         -Wno-vla-cxx-extension;
         ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
         /Zm200;
         ${DEFAULT_CXX_EXCEPTION_HANDLING}
         -Wno-unused-parameter # Lots of interfaces don't use everything
         -Wno-missing-field-initializers # Windows has loads of this sadly
+        -Wno-deprecated-literal-operator; # Fix for nlohmann/json literal operator warnings
         -ftime-trace
+        /DFMT_CONSTEVAL=
     )
     target_link_options(${PROJECT_NAME} PRIVATE
         $<$<CONFIG:Debug>:
