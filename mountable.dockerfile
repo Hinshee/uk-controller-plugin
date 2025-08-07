@@ -212,4 +212,8 @@ ENV CURL_INCLUDEDIR=/opt/curl/include/
 ENV CURL_LIBRARYDIR=/opt/curl/build/
 ENV CURL_DEBUG_LIBRARYDIR=/opt/curl/build/
 
+
+COPY . /app
+WORKDIR /app
+
 CMD ["/bin/bash"]
