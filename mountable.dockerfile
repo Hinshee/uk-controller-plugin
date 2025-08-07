@@ -151,22 +151,40 @@ RUN <<-EOF
 	
 	# Debug: Check if files exist and toolchain is available
 	echo "=== Debugging cURL build ==="
-	ls -la lib/libcurl.rc src/curl.rc || true
+	ls -la lib/ src/ || true
 	echo "TOOLCHAIN: $TOOLCHAIN"
 	cat $TOOLCHAIN
 	echo "=== End Debug ==="
 	
 	# Apply the copyright fix only if the files exist
-	sed -ie "s/\\\\xa9/(c)/g" lib/libcurl.rc src/curl.rc 2>/dev/null || echo "RC files not found or already patched"
+	find . -name "*.rc" -exec sed -ie "s/\\\\xa9/(c)/g" {} \; 2>/dev/null || echo "RC files not found or already patched"
 	
-	# Configure with verbose output
+	# Test toolchain first with a simple check
+	echo "=== Testing toolchain ==="
+	/opt/xwin/bin/cc --version || echo "Compiler test failed"
+	
+	# Configure with detailed output and error catching
+	echo "=== Running CMake configuration ==="
 	cmake --fresh \
-		-DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN \
-		-DBUILD_CURL_EXE=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF \
-		-DCURL_CA_PATH=none -DCURL_USE_LIBPSL=OFF \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN \
+		-DBUILD_CURL_EXE=OFF \
+		-DBUILD_EXAMPLES=OFF \
+		-DBUILD_TESTING=OFF \
+		-DCURL_CA_PATH=none \
+		-DCURL_USE_LIBPSL=OFF \
+		-DCURL_USE_SCHANNEL=ON \
+		-DCURL_USE_OPENSSL=OFF \
 		-DCMAKE_VERBOSE_MAKEFILE=ON \
-		-G Ninja -B build
-	ninja -C build
+		-G Ninja -B build 2>&1 | tee cmake_output.log
+	
+	echo "=== CMake configuration completed ==="
+	
+	# Build with error handling
+	echo "=== Running Ninja build ==="
+	ninja -C build -v 2>&1 | tee ninja_output.log
+	
+	echo "=== Build completed ==="
 
 	cd build/lib
 	# Check what library files are actually created
@@ -174,21 +192,25 @@ RUN <<-EOF
 	ls -la
 	echo "=== End Library files ==="
 	
-	# Copy files with fallbacks for different naming conventions
-	cp libcurl_imp.lib libcurl_a.lib 2>/dev/null || \
-	cp libcurl.lib libcurl_a.lib 2>/dev/null || \
-	cp curl.lib libcurl_a.lib 2>/dev/null || \
-	echo "Warning: Could not find import library to copy"
-	
-	cp libcurl_imp.lib libcurl_a_debug.lib 2>/dev/null || \
-	cp libcurl.lib libcurl_a_debug.lib 2>/dev/null || \
-	cp curl.lib libcurl_a_debug.lib 2>/dev/null || \
-	echo "Warning: Could not find debug library to copy"
+	# Find and copy the correct library files
+	if ls libcurl*.lib 1> /dev/null 2>&1; then
+		cp libcurl*.lib ../
+		cd ..
+		# Create standardized names
+		for lib in libcurl*.lib; do
+			cp "$lib" libcurl_a.lib
+			cp "$lib" libcurl_a_debug.lib
+			break
+		done
+	else
+		echo "No libcurl library files found!"
+		exit 1
+	fi
 EOF
 
 ENV CURL_INCLUDEDIR=/opt/curl/include/
-ENV CURL_LIBRARYDIR=/opt/curl/build/lib/
-ENV CURL_DEBUG_LIBRARYDIR=/opt/curl/build/lib/
+ENV CURL_LIBRARYDIR=/opt/curl/build/
+ENV CURL_DEBUG_LIBRARYDIR=/opt/curl/build/
 
 
 COPY . /app
